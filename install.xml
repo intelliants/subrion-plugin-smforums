@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<plugin name="smforums">
+	<title>SMF Single Sign-On</title>
+	<summary>SimpleMachines forums members integration plugin.</summary>
+	<author>Intelliants LLC</author>
+	<contributor>Intelliants LLC</contributor>
+	<version>2.3.1</version>
+	<date>2013-05-10</date>
+	<compatibility>2.3.8</compatibility>
+
+	<hooks>
+		<hook name="phpCoreBeforePageDefine">
+			<![CDATA[
+if (iaView::REQUEST_HTML == $this->iaView->getRequestType())
+{
+	// include API
+	require_once IA_PLUGINS . 'smforums' . IA_DS . 'includes' . IA_DS . 'api' . IA_DS . 'smf_2_api.php';
+
+	// init users class
+	$this->factory(iaCore::CORE, 'users');
+
+	if (iaUsers::hasIdentity())
+	{
+		$username = iaUsers::getIdentity()->username;
+		if (!smfapi_isOnline($username))
+		{
+			smfapi_login($username);
+		}
+	}
+}
+			]]>
+		</hook>
+
+		<hook name="memberAdded">
+			<![CDATA[
+// include API
+require_once IA_PLUGINS . 'smforums' . IA_DS . 'includes' . IA_DS . 'api' . IA_DS . 'smf_2_api.php';
+
+$smf_member['member_name'] = $member['username'];
+$smf_member['email'] = $member['email'];
+$smf_member['password'] = $password;
+$smf_member['require'] = 'nothing';
+
+if (isset($member['fullname']) && !empty($member['fullname']))
+{
+	$smf_member['real_name'] = $member['fullname'];
+}
+
+smfapi_registerMember($smf_member);
+			]]>
+		</hook>
+
+		<hook name="phpUserLogout">
+			<![CDATA[
+// include API
+require_once IA_PLUGINS . 'smforums' . IA_DS . 'includes' . IA_DS . 'api' . IA_DS . 'smf_2_api.php';
+
+if (iaUsers::hasIdentity())
+{
+	smfapi_logout(iaUsers::getIdentity()->username);
+}
+			]]>
+		</hook>
+	</hooks>
+</plugin>
